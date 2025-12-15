@@ -2,3 +2,5 @@ venv/
 .env
 data/
 chroma_db/
+chat_sessions/
+extra/
