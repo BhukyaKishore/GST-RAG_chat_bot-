@@ -1,73 +1,84 @@
-# Modular RAG Application
+# TaxBuddy AI Assistant
 
-This is a modular Retrieval-Augmented Generation (RAG) application that answers questions based on PDF documents found in the `data/` directory.
+TaxBuddy is a Retrieval-Augmented Generation (RAG) application designed to assist with GST and Income Tax queries. It uses OpenAI's models to answer questions based on documents stored in the `data/` directory.
 
 ## Features
-- **Models**: Uses `gpt-3.5-turbo` for generation and `text-embedding-ada-002` for embeddings.
-- **Vector Database**: Uses ChromaDB for storing and retrieving document chunks.
-- **Modularity**: Code is organized into logical modules (`app/core`, `app/ingestion`, `app/rag`).
-- **GPU Utilization**: Chroma and LangChain will utilize GPU if available (via PyTorch/CUDA underlying libraries), though text-based RAG is often CPU-bound on ingestion/API calls.
 
-## Prerequisites
-- Python 3.9+
-- OpenAI API Key
+- **Interactive Web Interface**: A modern, responsive chat UI (`TaxBuddy`) with dark mode support.
+- **RAG Powered**: Retrieves relevant context from your PDF documents to answer questions accurately.
+- **Persistent Chat History**: Chats are saved as JSON files in `chat_sessions/`, allowing you to revisit conversations.
+- **Image Upload**: (Mock) Support for uploading images in the chat.
+- **Modular Design**: organized codebase into `app/` (core logic), `frontend/` (UI), and `data/` (knowledge base).
 
-## Installation
+## Project Structure
 
-1.  Clone the repository.
-2.  Install dependencies:
+```
+.
+├── app/
+│   ├── server.py          # FastAPI Web Server (Entry Point)
+│   ├── core/              # Configuration & DB connection
+│   ├── ingestion/         # Document processing logic
+│   └── rag/               # LangChain RAG pipeline definition
+├── frontend/
+│   └── index.html         # Main Chat UI (HTML/JS/CSS)
+├── data/                  # Place your PDF documents here
+├── chat_sessions/         # Stores chat history (JSON files)
+├── chroma_db/             # Vector Database storage
+└── requirements.txt       # Python dependencies
+```
+
+## Setup & Installation
+
+1.  **Clone the repository**
+2.  **Create a Virtual Environment**:
+    ```bash
+    python3 -m venv venv
+    source venv/bin/activate
+    ```
+3.  **Install Dependencies**:
     ```bash
     pip install -r requirements.txt
     ```
-3.  Set up your environment variables:
-    - Copy `.env.example` (or create `.env`) and add your OpenAI Key:
+4.  **Environment Variables**:
+    Create a `.env` file in the root directory and add your OpenAI API Key:
     ```bash
     OPENAI_API_KEY=sk-...
     ```
 
 ## Usage
 
-### 1. Ingest Data
-Place your PDF files in the `data/` folder. Then run:
+### 1. Ingest Data (Prepare Knowledge Base)
+Before asking questions, you need to process your PDF files. Place them in `data/` and run:
 
 ```bash
 python main.py --ingest
 ```
-This will:
-- Load PDFs from `data/`.
-- Split them into chunks.
-- Create/Update the Vector Store in `chroma_db/`.
 
-### 2. Ask Questions
-**Option A: Interactive CLI**
+### 2. Run the Web Server (Recommended)
+This starts the TaxBuddy web interface.
+
+```bash
+./venv/bin/uvicorn app.server:app --port 8000 --host 0.0.0.0
+# OR
+python -m uvicorn app.server:app --port 8000
+```
+
+Open your browser and navigate to: **http://localhost:8000**
+
+### 3. Run CLI (Alternative)
+You can also chat via the terminal:
+
 ```bash
 python main.py
 ```
 
-**Option B: Web Interface**
-```bash
-uvicorn app.server:app --reload
-```
-Then visit `http://localhost:8000/static/index.html` in your browser.
+## Key Files Documentation
 
-How to Use
-Activate Environment: source venv/bin/activate
-Ask Questions: python main.py
-Ingest New Data: Place PDFs in 
-data/
-and run python main.py --ingest
+- **`app/server.py`**: The web server. Handles API routes for chat (`/chat`), history loading (`/load_chat`), and session management (`/new_chat`).
+- **`app/rag/chain.py`**: Defines the RAG chain using LangChain. It combines retrieval (from ChromaDB) with the LLM to generate answers.
+- **`frontend/index.html`**: The complete frontend application. Contains the HTML structure, CSS styling, and JavaScript logic for communicating with the backend APIs.
 
+## Troubleshooting
 
-## Project Structure
-```
-.
-├── app/
-│   ├── config.py          # Configuration settings
-│   ├── core/              # Core logic (LLM, DB setup)
-│   ├── ingestion/         # Data loading and ingestion logic
-│   └── rag/               # RAG chain definition
-├── data/                  # PDF source files
-├── main.py                # Entry point
-├── requirements.txt       # Dependencies
-└── README.md              # Documentation
-```
+- **500 Error / Authentication Error**: Ensure your `OPENAI_API_KEY` in `.env` is correct.
+- **No Answers**: Make sure you have run the ingestion step (`python main.py --ingest`) so the database has content.

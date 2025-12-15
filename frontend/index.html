@@ -750,9 +750,12 @@
         </div>
     </div>
     <script>
+        // Global variable to track the current chat session ID
         let currentCID = "{{ conversation_id }}";
+        // Variable to store the ID of the chat intended for deletion
         let chatToDelete = null;
 
+        // DOM Elements
         const chatArea = document.getElementById("chatArea");
         const chatWindow = document.getElementById("chatWindow");
         const chatInput = document.getElementById("chatInput");
@@ -760,12 +763,14 @@
         const deleteModal = document.getElementById("deleteModal");
 
         // ================= DELETE MODAL =================
+        // Shows the confirmation modal for deleting a chat
         function showDeleteModal(event, cid) {
-            event.stopPropagation();
+            event.stopPropagation(); // Prevent triggering loadChatFromHistory
             chatToDelete = cid;
             deleteModal.classList.add("show");
         }
 
+        // Hides the delete modal
         function hideDeleteModal() {
             chatToDelete = null;
             deleteModal.classList.remove("show");
@@ -780,6 +785,7 @@
         };
 
         // ================= UI HELPERS =================
+        // Displays the 3-dot typing indicator
         function showTyping() {
             let div = document.createElement("div");
             div.id = "typingIndicator";
@@ -789,19 +795,23 @@
             scrollSmooth();
         }
 
+        // Removes the typing indicator
         function hideTyping() {
             let d = document.getElementById("typingIndicator");
             if (d) d.remove();
         }
 
+        // Smoothly scrolls the chat window to the bottom
         function scrollSmooth() {
             chatArea.scrollTo({ top: chatArea.scrollHeight, behavior: "smooth" });
         }
 
+        // Hides the welcome screen when chat starts
         function showChat() {
             welcome.style.display = "none";
         }
 
+        // Renders a message bubble (User or Bot)
         function displayMessage(role, msg) {
             showChat();
             if (role === "bot" || role === "assistant") {
@@ -812,6 +822,7 @@
                 avatar.innerText = "🤖";
                 let bubble = document.createElement("div");
                 bubble.className = "msg bot-msg";
+                // Replace newlines with <br> for proper formatting
                 bubble.innerHTML = msg ? msg.replace(/\n/g, "<br>") : "";
 
                 let time = document.createElement("div");
@@ -837,11 +848,12 @@
             scrollSmooth();
         }
 
-        // ================= ACTIONS =================
+        // ================= SERVER ACTIONS =================
+        // Loads a specific chat session from the server
         async function loadChatFromHistory(cid) {
             currentCID = cid;
             chatWindow.innerHTML = "";
-            showChat(); // Hide welcome
+            showChat(); // Hide welcome screen
 
             try {
                 let res = await fetch("/load_chat", {
@@ -851,6 +863,7 @@
                 });
                 let data = await res.json();
                 if (data.history) {
+                    // Render each message from history
                     data.history.forEach(m => displayMessage(m.role, m.content));
                 }
             } catch (error) {
@@ -858,10 +871,12 @@
             }
         }
 
+        // Sends the user message to the backend
         async function sendMessage() {
             let text = chatInput.value.trim();
             if (!text) return;
 
+            // 1. Display user message locally immediately
             displayMessage("user", text);
             chatInput.value = "";
             chatInput.style.height = "auto";
@@ -869,6 +884,7 @@
             showTyping();
 
             try {
+                // 2. Send to server
                 let res = await fetch("/chat", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
@@ -877,6 +893,7 @@
 
                 hideTyping();
                 let data = await res.json();
+                // 3. Display bot response
                 displayMessage("assistant", data.reply);
 
             } catch (error) {
@@ -886,6 +903,7 @@
             }
         }
 
+        // Request server to delete a chat session
         async function deleteChat(cid) {
             try {
                 await fetch("/delete_chat", {
@@ -899,7 +917,7 @@
                 if (el) el.remove();
 
                 if (currentCID === cid) {
-                    // Refresh to get a new session
+                    // Refresh to get a new session if current one deleted
                     window.location.reload();
                 }
             } catch (error) {
@@ -907,17 +925,16 @@
             }
         }
 
+        // Click handler for "New Chat" button
         document.getElementById("newChatBtn").onclick = async () => {
-            // Create new chat on server
             try {
                 let res = await fetch("/new_chat", { method: "POST" });
                 let data = await res.json();
                 currentCID = data.conversation_id;
                 chatWindow.innerHTML = "";
                 welcome.style.display = "block";
-                // Refresh page to see it in list? Or just continue.
-                // Ideally we prepend to list, but for simplicity let's just start chatting.
-                // The list updates on refresh.
+                // Note: Ideally we prepend to the sidebar list here,
+                // but refreshing the page is a simpler way to sync the list.
             } catch (e) {
                 console.error(e);
             }
@@ -925,6 +942,8 @@
 
         // ================= EVENT LISTENERS =================
         document.getElementById("sendBtn").onclick = sendMessage;
+
+        // Handle Enter key (Shift+Enter for new line)
         chatInput.addEventListener("keydown", (e) => {
             if (e.key === "Enter" && !e.shiftKey) {
                 e.preventDefault();
@@ -938,24 +957,24 @@
             chatInput.style.height = Math.min(chatInput.scrollHeight, 160) + "px";
         });
 
-        // Theme Toggle
+        // Theme Toggle (Light/Dark)
         document.getElementById("themeBtn").onclick = () => {
             let t = document.body.getAttribute("data-theme");
             let newTheme = t === "light" ? "dark" : "light";
             document.body.setAttribute("data-theme", newTheme);
             localStorage.setItem("taxbuddy_theme", newTheme);
         };
-        // Load saved theme
+        // Load saved theme on startup
         let savedTheme = localStorage.getItem("taxbuddy_theme") || "light";
         document.body.setAttribute("data-theme", savedTheme);
 
-        // Upload
+        // Image Upload Handlers
         document.getElementById("uploadBtn").onclick = () => document.getElementById("imageInput").click();
         document.getElementById("imageInput").onchange = async (e) => {
             const file = e.target.files[0];
             if (!file) return;
 
-            // Preview
+            // Preview image immediately
             const reader = new FileReader();
             reader.onload = function (evt) {
                 let div = document.createElement("div");
@@ -982,13 +1001,13 @@
             }
         };
 
-        // FAQ Toggle
+        // FAQ Toggle Logic
         document.getElementById("faqToggleBtn").onclick = () => {
             document.body.classList.toggle("faq-open");
             document.body.classList.toggle("faq-closed");
         };
 
-        // FAQ Accordion
+        // FAQ Accordion Logic
         document.querySelectorAll(".faq-question").forEach(q => {
             q.addEventListener("click", () => {
                 let ans = q.nextElementSibling;

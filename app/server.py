@@ -1,3 +1,19 @@
+"""
+This is the main entry point for the FastAPI web server.
+It handles:
+1. Serving the frontend (HTML/CSS/JS).
+2. API endpoints for chat (sending/receiving messages).
+3. Session management (loading/saving chat history to JSON files).
+4. Image upload (mock implementation).
+
+Routes:
+- GET /: Serves the main chat interface.
+- POST /new_chat: Creates a new chat session.
+- POST /chat: Processes a user message via the RAG chain and returns the bot response.
+- POST /load_chat: Loads the message history for a specific session.
+- POST /delete_chat: Deletes a session.
+- POST /upload-image: Handles image uploads (placeholder).
+"""
 from fastapi import FastAPI, Request, UploadFile, File
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import JSONResponse
@@ -39,7 +55,9 @@ def answer_question(user_msg, session_id):
         return "I encountered an error processing your request. Please check technical logs."
 
 # ---------- Helpers ----------
+
 def index_load():
+    """Loads the list of all chat sessions from index.json."""
     if not os.path.exists(INDEX_FILE):
         return []
     try:
@@ -50,15 +68,18 @@ def index_load():
 
 
 def index_save(data):
+    """Saves the list of chat sessions to index.json."""
     with open(INDEX_FILE, "w") as f:
         json.dump(data, f, indent=4)
 
 
 def chat_file(cid):
+    """Returns the file path for a specific chat session ID."""
     return os.path.join(CHAT_DIR, f"{cid}.json")
 
 
 def load_history(cid):
+    """Loads the message history for a given session ID."""
     file = chat_file(cid)
     if not os.path.exists(file):
         return []
@@ -70,6 +91,7 @@ def load_history(cid):
 
 
 def save_history(cid, history):
+    """Saves the message history for a given session ID."""
     with open(chat_file(cid), "w") as f:
         json.dump(history, f, indent=4)
 

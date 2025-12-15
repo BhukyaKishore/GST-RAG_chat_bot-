@@ -1,3 +1,15 @@
+"""
+This module defines the Retrieval-Augmented Generation (RAG) chain.
+
+It combines:
+1. A Language Model (LLM).
+2. A Vector Database (ChromaDB) for retrieval.
+3. Conversational Memory to handle follow-up questions.
+
+Key components:
+- build_rag_chain(): The main function that assembles the pipeline.
+- get_session_history(): Manages in-memory chat history for the chain (note: server also saves to disk).
+"""
 from langchain.chains import create_retrieval_chain, create_history_aware_retriever
 from langchain.chains.combine_documents import create_stuff_documents_chain
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
